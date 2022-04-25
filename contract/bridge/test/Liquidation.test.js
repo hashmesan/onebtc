@@ -3,12 +3,8 @@ const { expectRevert } = require("@openzeppelin/test-helpers");
 const { web3 } = require("@openzeppelin/test-helpers/src/setup");
 const { deployProxy } = require("@openzeppelin/truffle-upgrades");
 
-const OneBtc = artifacts.require("OneBtc");
-const RelayMock = artifacts.require("RelayMock");
-const ExchangeRateOracleWrapper = artifacts.require("ExchangeRateOracleWrapper");
 const { issueTxMock } = require('./mock/btcTxMock');
-const Secp256k1 = artifacts.require("Secp256k1");
-const TxValidate = artifacts.require("TxValidate");
+const deployHelper = require("./helpers/deploy");
 
 const bitcoin = require('bitcoinjs-lib');
 const bn=b=>BigInt(`0x${b.toString('hex')}`);
@@ -39,16 +35,7 @@ contract("liquidation test", accounts => {
     var redeemBtcAddress;
     
     before(async function() {
-        relayMock = await RelayMock.new();
-        exchangeRateOracleWrapper = await deployProxy(ExchangeRateOracleWrapper);
-
-        const Secp256k1Lib = await Secp256k1.new();
-        OneBtc.link("Secp256k1", Secp256k1Lib.address);
-
-        const TxValidateLib = await TxValidate.new();
-        OneBtc.link("TxValidate", TxValidateLib.address);
-
-        oneBtc = await deployProxy(OneBtc, [RelayMock.address, ExchangeRateOracleWrapper.address],{unsafeAllowLinkedLibraries: true});
+        ({oneBtc, relayMock, exchangeRateOracleWrapper} = await deployHelper.deployOneBTC());
 
         // set BTC/ONE exchange rate
         await exchangeRateOracleWrapper.setExchangeRate(10); // 1 OneBtc = 10 ONE
